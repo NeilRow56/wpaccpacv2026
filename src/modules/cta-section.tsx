@@ -3,7 +3,10 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 export function CTASection() {
   return (
-    <section className="py-24 px-6 bg-linear-to-r from-secondary/20 via-background to-secondary/20">
+    <section
+      id="community"
+      className="py-24 px-6 bg-linear-to-r from-secondary/20 via-background to-secondary/20"
+    >
       <div className="container max-w-4xl mx-auto text-center">
         <div className="animate-fade-in">
           {/* Floating Elements */}
@@ -34,7 +37,7 @@ export function CTASection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-lg px-10 py-6"
+                  className="text-lg px-10 py-6 hover:text-white"
                 >
                   Schedule Demo
                 </Button>

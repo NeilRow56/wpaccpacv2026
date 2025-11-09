@@ -1,3 +1,4 @@
+import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { CTASection } from "@/modules/cta-section";
 import { FeaturesSection } from "@/modules/features-section";
@@ -16,6 +17,7 @@ export default function Home() {
       <TemplatesSection />
       <PricingSection />
       <CTASection />
+      <Footer />
     </div>
   );
 }
