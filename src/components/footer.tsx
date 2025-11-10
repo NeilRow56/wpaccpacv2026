@@ -131,8 +131,8 @@ export function Footer() {
               </a>
             </div>
           </div>
-          {/* Bottom Bar */}
         </div>
+        {/* Bottom Bar */}
         <div className="pt-8 border-t border-primary/10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-muted-foreground">
@@ -142,7 +142,7 @@ export function Footer() {
               </Suspense>{" "}
               FlowX. All rights reserved
             </div>
-            <div className="flex flex-col items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex  items-center gap-6 text-sm text-muted-foreground">
               <span>Made with ❤️ for developers</span>
               <div className="flex  items-center gap-2 ">
                 <div className=" w-2 h-2 bg-primary rounded-full ainimate-glow-pulse"></div>

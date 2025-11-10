@@ -22,6 +22,7 @@ const navItems = [
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-primary/10">
       <div className="container max-w-7xl mx-auto px-6">
@@ -49,19 +50,21 @@ export function Header() {
           {/* Destop auth buttons */}
           <div className="hidden md:flex items-center gap-3 animate-fade-in">
             <Button
+              asChild
               className="hover:text-white!"
               variant="ghost"
               size="sm"
               //  onClick={() => setIsAuthOpen(true)}
             >
-              Sign In
+              <Link href="/auth">Sign In</Link>
             </Button>
             <Button
+              asChild
               variant="hero"
               size="sm"
               //  onClick={() => setIsAuthOpen(true)}
             >
-              Get Started For Free
+              <Link href="/auth">Get Started For Free</Link>
             </Button>
           </div>
           {/* Mobile Menu */}
@@ -101,6 +104,7 @@ export function Header() {
               <div></div>
             </SheetContent>
           </Sheet>
+          {/* Auth Modal */}
         </div>
       </div>
     </header>
