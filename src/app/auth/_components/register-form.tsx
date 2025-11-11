@@ -92,7 +92,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   }
 
   return (
-    <Card className="w-full sm:max-w-md">
+    <Card className="w-full sm:max-w-md border-red-200">
       <CardHeader className="text-center">
         <CardTitle>Welcome to WpAccPac!</CardTitle>
         <CardDescription>Create your account</CardDescription>
