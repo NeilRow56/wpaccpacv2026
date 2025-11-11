@@ -15,9 +15,6 @@ export default async function DashboardPage() {
   return (
     <div>
       <h1>Welcome {session.user.name}</h1>
-      <Suspense fallback={<div>Loading public info…</div>}>
-        <pre>{JSON.stringify(session, null, 2)}</pre>;
-      </Suspense>
     </div>
   );
 }

@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: `%s | Flow x`,
+    template: `%s `,
     default: APP_NAME,
   },
   description: APP_DESCRIPTION,
@@ -34,9 +34,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      suppressHydrationWarning
       className="dark"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
