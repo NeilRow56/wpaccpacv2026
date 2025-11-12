@@ -4,14 +4,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockTemplates, Template } from "@/lib/mock";
-import { Filter, Search } from "lucide-react";
+import { CheckCircle, Filter, Search } from "lucide-react";
 import { useState } from "react";
 import { TemplateCard } from "./_components/template-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 export default function TemplatesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
+  const router = useRouter();
   // Create a new array from the categories in lib/mock.ts
   const categories = [
     "all",
@@ -29,7 +38,7 @@ export default function TemplatesPage() {
   });
 
   const handleUseTemplate = (template: Template) => {
-    console.log("Use Template");
+    router.push(`/dashboard/templates/${template.id}`);
   };
 
   const HandlePreview = (template: Template) => {
@@ -107,6 +116,76 @@ export default function TemplatesPage() {
           </p>
         </div>
       )}
+      {/*  Preview Dialog */}
+      <Dialog
+        open={!!previewTemplate}
+        onOpenChange={() => setPreviewTemplate(null)}
+      >
+        <DialogContent className="bg-[#121826] border-[#1E293B] text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center space-x-3">
+              <span className="text-3xl">
+                {previewTemplate &&
+                  previewTemplate.icon === "CreditCard" &&
+                  "💳"}
+                {previewTemplate && previewTemplate.icon === "Mail" && "📧"}
+                {previewTemplate && previewTemplate.icon === "Webhook" && "📎"}
+                {previewTemplate && previewTemplate.icon === "FileText" && "📝"}
+              </span>
+              <span>{previewTemplate?.name}</span>
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              <span>{previewTemplate?.description}</span>
+            </DialogDescription>
+          </DialogHeader>
+          {previewTemplate && (
+            <div className=" space-y-3 mt-6">
+              <div>
+                <h4 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">
+                  Worlflow Steps
+                </h4>
+                <div className="space-y-3">
+                  {previewTemplate?.steps.map((step, index) => (
+                    <div
+                      className="flex items-center space-x-3 bg-[#1E293B] rounded-lg"
+                      key={index}
+                    >
+                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-green-400">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{step}</div>
+                      </div>
+
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex space-x-3 mt-2">
+                  <Button
+                    onClick={() => {
+                      handleUseTemplate(previewTemplate);
+                      setPreviewTemplate(null);
+                    }}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-black font-medium"
+                  >
+                    Use this Template
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPreviewTemplate(null)}
+                    className="border-[#334155] border text-gray-300 bg-[#121826] hover:bg-[#1E293B] hover:text-white"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
