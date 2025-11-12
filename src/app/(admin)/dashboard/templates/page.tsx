@@ -22,5 +22,9 @@ export default function TemplatesPage() {
 
     return matchesCategory && matchesSearch;
   });
+
+  const handleUseTemplate = (template: Template) => {
+    console.log("");
+  };
   return <div>Templates Page</div>;
 }
