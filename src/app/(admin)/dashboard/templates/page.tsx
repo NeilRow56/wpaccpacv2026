@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { mockTemplates, Template } from "@/lib/mock";
 import { Filter, Search } from "lucide-react";
 import { useState } from "react";
+import { TemplateCard } from "./_components/template-card";
 
 export default function TemplatesPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,7 +85,14 @@ export default function TemplatesPage() {
       {/*  Template Grid */}
       {filteredTemplates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          Template Card
+          {filteredTemplates?.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onUseTemplate={handleUseTemplate}
+              onPreview={HandlePreview}
+            />
+          ))}
         </div>
       ) : (
         <div className="text-center py-12">

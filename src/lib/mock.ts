@@ -33,7 +33,7 @@ export const mockTemplates: Template[] = [
     description: "AI-powered email summaries sent to your Discord server",
     icon: "Mail",
     category: "AI Workflow",
-    steps: ["Gmail", "AI Generate", "Discord"],
+    steps: ["Gmail", "AI Generate", "Discord", "letters", "Slack"],
   },
 
   {
