@@ -52,14 +52,14 @@ const data = {
   ],
   navMain: [
     {
-      title: "Orc Warrior Ground",
-      url: "#",
+      title: "Workflows",
+      url: "/dashboard/workflows",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Workflows-summary",
+          url: "/dashboard/workflows",
         },
         {
           title: "Starred",
@@ -72,13 +72,13 @@ const data = {
       ],
     },
     {
-      title: "Models",
+      title: "Templates",
       url: "#",
       icon: Bot,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Templates summary",
+          url: "/dashboard/templates",
         },
         {
           title: "Explorer",
@@ -91,7 +91,7 @@ const data = {
       ],
     },
     {
-      title: "Documentation",
+      title: "Billing",
       url: "#",
       icon: BookOpen,
       items: [
