@@ -77,7 +77,7 @@ const data = {
       icon: Bot,
       items: [
         {
-          title: "Templates summary",
+          title: "Templates gallery",
           url: "/dashboard/templates",
         },
         {
