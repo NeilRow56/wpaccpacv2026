@@ -51,6 +51,111 @@ export const EDGE_STYLE = {
   strokeDasharray: "5, 5",
 };
 
+export const TOOL_NODES = [
+  {
+    id: "integrations",
+    category: "Integrations",
+    items: [
+      {
+        id: "gmail",
+        name: "Gmail",
+        icon: Mail,
+        description: "trigger: new email - action: send email",
+      },
+      {
+        id: "slack",
+        name: "Slack",
+        icon: Hash,
+        description: "action: send message",
+      },
+      {
+        id: "discord",
+        name: "Discord",
+        icon: MessageSquare,
+        description: "action: send message",
+      },
+      {
+        id: "notion",
+        name: "Slack",
+        icon: FileText,
+        description: "action: create/update page",
+      },
+      {
+        id: "sheets",
+        name: "Google Sheets",
+        icon: Database,
+        description: "action: append row",
+      },
+      {
+        id: "stripe",
+        name: "Stripe",
+        icon: CreditCard,
+        description: "trigger: payment succeeded",
+      },
+      {
+        id: "webhook-custom",
+        name: "Webhook (Custom App)",
+        icon: Webhook,
+        description: "action: call HTTP",
+      },
+      {
+        id: "openai",
+        name: "OpenAI",
+        icon: Brain,
+        description: "action: generate text",
+      },
+      {
+        id: "claude",
+        name: "Claude",
+        icon: Brain,
+        description: "action: generate text",
+      },
+      {
+        id: "gemini",
+        name: "Gemini",
+        icon: Brain,
+        description: "action: generate text",
+      },
+    ],
+  },
+  {
+    id: "triggers",
+    category: "Triggers (Core)",
+    items: [
+      {
+        id: "webhook-trigger",
+        name: "Wehook Trigger",
+        icon: Webhook,
+        description: "start on incoming HTTP request",
+      },
+      {
+        id: "schedule-trigger",
+        name: "Schedule Trigger",
+        icon: Clock,
+        description: "cron/interval",
+      },
+    ],
+  },
+  {
+    id: "actions",
+    category: "Actions (Core)",
+    items: [
+      {
+        id: "",
+        name: "",
+        icon: Code,
+        description: "generic REST call (GET/POST)",
+      },
+      {
+        id: "",
+        name: "",
+        icon: Bell,
+        description: "choose Slack/Discord/Email internally",
+      },
+    ],
+  },
+];
+
 export const getIconForStep = (stepName: string): string => {
   const iconKeys = Object.keys(ICON_MAP);
   const foundKey = iconKeys.find((key) => stepName.includes(key));

@@ -24,8 +24,11 @@ import {
   buildInitialFlow,
   EDGE_STYLE,
   reindexStepNumbers,
+  TOOL_NODES,
 } from "@/workflow/flow-utils";
 import { nodeTypes } from "@/workflow/custom-node";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@radix-ui/react-tabs";
 
 const linkEdges = (sourceId: string, newId: string, eds: any[]) => {
   const outgoing = eds.filter((e) => e.source === sourceId);
@@ -51,6 +54,29 @@ const linkEdges = (sourceId: string, newId: string, eds: any[]) => {
   }));
   return [...remaining, edgeToNew, ...newToTargets];
 };
+
+const findProviderMeta = (label: string) => {
+  const category = TOOL_NODES?.find((cat) =>
+    cat.items?.some((i) => i.name === label)
+  );
+  const item = category?.items?.find((i) => i.name === label);
+  return {
+    category: category?.category ?? "custom",
+    item,
+    providerId: item?.id ?? null,
+  };
+};
+
+const renderKVGrid = (pairs: Array<[string, React.ReactNode]>) => (
+  <div className="grid grid-cols-2 gap-3 text-sm">
+    {pairs?.map(([k, v]) => (
+      <div key={k}>
+        <div className="text-gray-400">{k}</div>
+        <div className="text-white font-medium">{v}</div>
+      </div>
+    ))}
+  </div>
+);
 
 export default function TemplateDetailsPage() {
   const params = useParams();
@@ -266,7 +292,133 @@ export default function TemplateDetailsPage() {
         </Card>
       </div>
       {/* Right side  */}
-      <div className="w-80 border-l border-[#1e293b] p-4 overflow-auto"></div>
+      <div className="w-80 border-l border-[#1e293b] p-4 overflow-y-auto">
+        <Tabs defaultValue="nodes">
+          <TabsList className="w-full bg-[#0b0f14]">
+            <TabsTrigger
+              value="nodes"
+              className="flex-1 data-[state=active]:bg-[#1E293B] data-[state=active]:text-green-400"
+            >
+              Nodes
+            </TabsTrigger>
+            <TabsTrigger
+              value="properties"
+              className="flex-1 data-[state=active]:bg-[#1E293B] data-[state=active]:text-green-400"
+            >
+              Properties
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="nodes" className="space-y-4">
+            {TOOL_NODES.map((category) => (
+              <div key={category.id}>
+                <h3>{category.category}</h3>
+                <div className="space-y-2">
+                  {category.items.map((node, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center p-2 rounded-md hover:bg[#1E293B] cursor-grab transition-colors"
+                      draggable
+                      onDragStart={(event) => onDragStart(event, node)}
+                    >
+                      <div className="w-8 h-8 rounded-md bg-[#1E293B] flex items-center justify-center mr-3">
+                        <node.icon className="w-4 h-4 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {node.name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {node.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </TabsContent>
+          <TabsContent value="properties">
+            {selectedNode ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-white">
+                  Node Properties
+                </h3>
+                <p className="text-gray-400">Details for the selected node</p>
+                {(() => {
+                  const d = selectedNode.data as any;
+                  const label = d?.label ?? "";
+                  const stepNumber = d?.stepNumber ?? null;
+                  const { category: type, providerId } =
+                    findProviderMeta(label);
+                  const isConfigured =
+                    typeof stepNumber === "number"
+                      ? !!configuredSteps[Number(stepNumber)]
+                      : false;
+                  const accounts = providerId
+                    ? userConnections?.filter((c) => c.platform === providerId)
+                    : [];
+
+                  const info = [
+                    ["Name", label || "-"],
+                    ["Step", stepNumber ?? "_"],
+                    ["Type", type],
+                    ["configured", isConfigured ? "Yes" : "No"],
+                  ] as Array<[string, React.ReactNode]>;
+
+                  const accountsContent = connLoading ? (
+                    <div className="text-gray-500 text-sm">
+                      Loading accounts...
+                    </div>
+                  ) : providerId ? (
+                    accounts?.length > 0 ? (
+                      <ul className="space-y-2">
+                        {accounts?.map((acc) => (
+                          <li
+                            key={acc.id}
+                            className="flex items-center justify-between bg-[#1E293B] rounded-md p-2 border-[#334155]"
+                          >
+                            <span className="text-sm text-gray-200">
+                              {acc.account_name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {acc.platform}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500">
+                        No connected accounts for "{providerId}"
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-gray-500 text-sm">
+                      This node does not require an external account.
+                    </div>
+                  );
+                  return (
+                    <div className="space-y-3">
+                      {renderKVGrid(info)}
+                      <div className="pt-2">
+                        <div className="text-gray-400 mb-1">
+                          Connected Accounts
+                        </div>
+                        {accountsContent}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400">
+                  Select a node to view its properties
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
