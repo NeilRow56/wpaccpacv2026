@@ -29,6 +29,9 @@ import {
 import { nodeTypes } from "@/workflow/custom-node";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabsContent } from "@radix-ui/react-tabs";
+import { Icon, Play, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { NodeConfigurationModal } from "../../../../../workflow/node-configuration-modal";
 
 const linkEdges = (sourceId: string, newId: string, eds: any[]) => {
   const outgoing = eds.filter((e) => e.source === sourceId);
@@ -120,6 +123,9 @@ export default function TemplateDetailsPage() {
     );
     event.dataTransfer.effectAllowed = "move";
   }, []);
+
+  const handleSaveWorkflow = useCallback(async () => {}, []);
+  const handleTestWorkflow = useCallback(async () => {}, []);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -225,6 +231,25 @@ export default function TemplateDetailsPage() {
     [openModal]
   );
 
+  const markStepConfigured = useCallback((stepNumber: number, config: any) => {
+    setNodes((prev) =>
+      prev.map((n) => {
+        const sn = Number((n.data as any)?.stepNumber);
+        if (sn === stepNumber) {
+          return {
+            ...n,
+            data: {
+              ...(n.data as any),
+              isConfigured: true,
+              config: config ?? (n.data as any)?.config ?? null,
+            },
+          };
+        }
+        return n;
+      })
+    );
+  }, []);
+
   useEffect(() => {
     if (selectedNode) {
       const updated = nodes.find((n) => n.id === selectedNode.id);
@@ -262,7 +287,36 @@ export default function TemplateDetailsPage() {
                 "Design your workflow by connecting nodes"}
             </p>
           </div>
-          <div className="flex items-center gap-3">Keep Clear</div>
+          <div className="flex items-center gap-3">
+            {[
+              {
+                icon: Play,
+                text: "Test",
+                variant: "outline",
+                onClick: handleTestWorkflow,
+              },
+              {
+                icon: Save,
+                text: "Save",
+                variant: "default",
+                onClick: handleSaveWorkflow,
+              },
+            ].map(({ icon: Icon, text, variant, onClick }) => (
+              <Button
+                key={text}
+                variant={variant as any}
+                className={
+                  variant === "outline"
+                    ? "border-[#334155] text-gray-300 hover:bg-[#1E293B] hover:text-white"
+                    : "bg-green-500 hover:bg-green-600 text-black font-medium"
+                }
+                onClick={onClick}
+              >
+                <Icon className="w-4 h-4 mr-2" />
+                {text}
+              </Button>
+            ))}
+          </div>
         </div>
         {/* Canvas */}
         <Card className="border-[#1E293B] border mb-24   bg-[#121826]  flex-1 relative">
@@ -419,6 +473,13 @@ export default function TemplateDetailsPage() {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Configuration Modal (double click a node to open) */}
+      <NodeConfigurationModal
+        onConfigured={markStepConfigured}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        nodeData={modalNodeData}
+      />
     </div>
   );
 }
