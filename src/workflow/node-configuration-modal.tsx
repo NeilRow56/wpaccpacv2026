@@ -7,6 +7,7 @@ import {
   ArrowRight,
   CheckCircle,
   ExternalLink,
+  Key,
   Settings,
   X,
 } from "lucide-react";
@@ -455,8 +456,66 @@ export function NodeConfigurationModal({
                   </div>
                 </div>
               )}
+              {isApiKey && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-300 flex items-center">
+                    <Key className="w-4 h-4 mr-2" />
+                  </h3>
+                  {connections.length > 0 && (
+                    <Field label="Saved Keys">
+                      <select
+                        className="{selectCls}"
+                        value={selectedConnection || ""}
+                        onChange={(e) => setSelectedConnection(e.target.value)}
+                      >
+                        <option value="">Selected a saved key</option>
+                        {connections.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.account_name || `Key ${c.id.slice(0, 6)}`}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+                  <Field label="API Key">
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className={inputCls}
+                      placeholder="sk-..."
+                    />
+                  </Field>
+                </div>
+              )}
+              {isCore && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-gray-300 flex items-center">
+                    <Settings className="w-4 h-4 mr-2" />
+                    {displayName} Configuration
+                  </h3>
+                  {renderCoreConfiguration()}
+                </div>
+              )}
             </>
           )}
+        </div>
+        {/* Footer */}
+        <div className="mt-6 flex w-full justify-end gap-2">
+          <Button
+            className="bg-green-500 hover:bg-green-600  text-black"
+            disabled={!!saveDisabled}
+            onClick={handleSave}
+          >
+            Save Configuration
+          </Button>
+          <Button
+            variant="outline"
+            className="border-[#334155] text-gray-300 hover:bg-[#1E293B] hover:text-white"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
         </div>
       </div>
     </div>
