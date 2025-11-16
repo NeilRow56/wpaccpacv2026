@@ -46,10 +46,10 @@ export const providers = {
     callback: "/api/oauth/notion/callback",
   },
   stripe: {
-    key: process.env.STRIPECLIENT_ID!,
+    key: process.env.STRIPE_CLIENT_ID!,
     secret: process.env.STRIPE_CLIENT_SECRET!,
     authorize_url: "https://connect.stripe.com/oauth/authorize",
     access_url: "https://connect.stripe.com/oauth/token",
     callback: "/api/oauth/stripe/callback",
   },
-};
+} as const;
