@@ -1,10 +1,12 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
+import reactHooks from "eslint-plugin-react-hooks";
 import nextTs from "eslint-config-next/typescript";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  ...reactHooks,
   prettier,
   // Override default ignores of eslint-config-next.
   globalIgnores([

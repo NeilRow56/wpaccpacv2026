@@ -105,7 +105,7 @@ export async function GET(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const tokenRes = await fetch(cfg.access_url, {
       method: "POST",
-      headers: { "Content-Type": "application/z-www-form-urlencoded" },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,

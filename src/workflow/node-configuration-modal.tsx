@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ICON_MAP } from "./flow-utils";
 import {
   AlertTriangle,
@@ -105,6 +105,24 @@ const isCoreProvider = (p: string) => CORE_PROVIDERS.includes(p.toLowerCase());
 const isApiKeyProvider = (p: string) =>
   API_KEY_PROVIDERS.includes(p.toLowerCase());
 
+const fetchSavedConnections = async (
+  platform: string
+): Promise<Connection[]> => {
+  try {
+    const response = await fetch("/api/connections/get-user-connections");
+    if (!response.ok) throw new Error("Failed to fetch connections");
+    const data = await response.json();
+
+    return (data?.connections || []).filter(
+      (conn: Connection) =>
+        conn.platform.toLowerCase() === platform.toLowerCase()
+    );
+  } catch (error) {
+    console.error("Error fetching connections", error);
+    return [];
+  }
+};
+
 export function NodeConfigurationModal({
   isOpen,
   onClose,
@@ -151,11 +169,91 @@ export function NodeConfigurationModal({
   const isCore = isCoreProvider(platformName);
   const displayName = getDisplayName(platformName);
 
+  useEffect(() => {
+    if (!isOpen || !nodeData) return;
+
+    setConnections([]);
+    setSelectedConnection(null);
+    if (isOAuth || isApiKey) {
+      setLoading(true);
+      fetchSavedConnections(platformName)
+        .then((list) => {
+          setConnections(list);
+          if (list.length > 0) setSelectedConnection(list[0].id);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [isOpen, nodeData, isOAuth, isApiKey, platformName]);
+
   if (!isOpen || !nodeData) return null;
 
-  const handleSave = async () => {};
+  const handleSave = async () => {
+    if (!apiKey && selectedConnection) {
+      const conn = connections.find((c) => c.id === selectedConnection);
+      const config = conn
+        ? {
+            connectionId: conn.id,
+            provider: conn.platform,
+            accountName: conn.account_name,
+          }
+        : { connectionId: selectedConnection, provider: platformName };
+      onConfigured(nodeData.stepNumber, config);
+      onClose();
+      return;
+    }
 
-  const handleOAuthConnect = (platform: string) => {};
+    if (isApiKey && apiKey.trim()) {
+      try {
+        setLoading(true);
+        const res = await fetch("/api/connections/save-api-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            platform: platformName,
+            apiKey: apiKey.trim(),
+            apiEndpoint: apiEndpoint.trim() || undefined,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error) || "Failed to save API key";
+        }
+        const data = await res.json();
+
+        const updated = await fetchSavedConnections(platformName);
+        setConnections(updated);
+        setSelectedConnection(data?.connection?.id || updated[0]?.id || null);
+
+        const config = {
+          connectionId: data?.connection?.id || updated[0]?.id || null,
+          provider: platformName,
+          apiKey: apiKey.trim(),
+          apiEndpoint: apiEndpoint.trim() || undefined,
+        };
+
+        onConfigured(nodeData.stepNumber, config);
+        onClose();
+      } catch (error) {
+        console.error("Error saving API key:", error);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isCore) {
+      const config = { ...coreConfig };
+      onConfigured(nodeData.stepNumber, config);
+      onClose();
+      return;
+    }
+  };
+
+  const handleOAuthConnect = (platform: string) => {
+    const returnUrl = encodeURIComponent(window.location.href);
+    window.location.href = `/api/oauth/${platform}/start?returnUrl=${returnUrl}`;
+  };
 
   const renderCoreConfiguration = () => {
     switch (platformName) {
@@ -423,7 +521,7 @@ export function NodeConfigurationModal({
                                 {connection.account_name}
                               </p>
                               <p className="text-xs text-gray-400">
-                                Connecte on{" "}
+                                Connected on{" "}
                                 {new Date(
                                   connection.created_at
                                 ).toLocaleDateString()}
