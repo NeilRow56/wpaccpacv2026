@@ -26,13 +26,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid platform" }, { status: 400 });
   }
 
-  if (!apiKey || apiKey !== "string") {
+  if (!apiKey || typeof apiKey !== "string") {
     return NextResponse.json({ error: "Missing API key" }, { status: 400 });
   }
 
   try {
-    const encryptedApikey = encrypt(apiKey);
-    const ivHex = encryptedApikey.split(":")[0];
+    const encryptedApiKey = encrypt(apiKey);
+    const ivHex = encryptedApiKey.split(":")[0];
     const iv = Buffer.from(ivHex, "hex");
 
     const accountName = `${platform.toUpperCase()} ${maskKey(apiKey)}`;
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       .from(connections)
       .where(
         and(
-          eq(connections.user_id, session?.user.id),
+          eq(connections.user_id, session.user.id),
           eq(connections.platform, platform),
           eq(connections.account_name, accountName) // check for same account
         )
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       saved = await db
         .update(connections)
         .set({
-          access_token_enc: Buffer.from(encryptedApikey, "utf8"),
+          access_token_enc: Buffer.from(encryptedApiKey, "utf8"),
           refresh_token_enc: null,
           iv,
           metadata: { type: "api-key", endpoint: apiEndpoint || null },
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
           user_id: session.user.id,
           platform,
           account_name: accountName,
-          access_token_enc: Buffer.from(encryptedApikey, "utf8"),
+          access_token_enc: Buffer.from(encryptedApiKey, "utf8"),
           refresh_token_enc: null,
           iv,
           metadata: { type: "api-key", endpoint: apiEndpoint || null },
