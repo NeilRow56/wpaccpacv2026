@@ -1,4 +1,4 @@
-type WorkflowNode = {
+export type WorkflowNode = {
   id: string;
   data?: {
     label?: string;
@@ -8,7 +8,7 @@ type WorkflowNode = {
   };
 };
 
-type WorkflowEdge = {
+export type WorkflowEdge = {
   id: string;
   source: string; // upstream node id
   target: string; // downstream node id
