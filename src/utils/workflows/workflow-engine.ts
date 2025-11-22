@@ -1,5 +1,14 @@
 import { getUnseenEmailsForConnection } from "@/actions/workflow/get-unseen-emails-for-connection";
-import { WorkflowEdge, WorkflowNode } from "./topo-logicaaly-sorted";
+import {
+  topologicallySorted,
+  WorkflowEdge,
+  WorkflowNode,
+} from "./topo-logicaaly-sorted";
+import { db } from "@/db";
+import { connections } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { decrypt } from "../encrypt";
+import { executeNode } from "./execute-node";
 
 export function detectProvider(
   label?: string,
@@ -192,4 +201,251 @@ const executors: Record<string, NodeExecutor> = {
     const emails = await getUnseenEmailsForConnection(connectionId);
     return { triggerProvider: "gmail", triggerData: emails };
   },
+
+  "ai-generate": async (node, ctx) => {
+    const tpl = node?.data?.config?.prompt || "Sumarize:\n\n{{emails}}";
+    const prompt = renderPrompt(tpl, ctx.triggerData || []);
+    return { prompt };
+  },
+
+  openai: async (node, ctx) => {
+    let apiKey = node?.data?.config?.apiKey;
+    let endpoint = node?.data?.config?.apiEndpoint;
+    const model = node?.data?.config?.model;
+    const connectionId = node?.data?.config?.connectionId;
+
+    if (!apiKey && connectionId) {
+      const rows = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, connectionId))
+        .limit(1);
+
+      const row = rows[0];
+      if (!row?.access_token_enc) throw new Error("Missing OpenAi API key");
+      const enc = row.access_token_enc.toString("utf8");
+      apiKey = decrypt(enc);
+      const meta = (row.metadata as any) || {};
+      endpoint = endpoint || meta.endpoint || undefined;
+    }
+
+    if (!apiKey) throw new Error("Missing OpenAI API key");
+    const output = await callOpenAI(apiKey, endpoint, ctx.prompt || "", model);
+    return {
+      aiProvider: "openai",
+      aiOutput: output,
+      promptUsed: ctx.prompt || "",
+    };
+  },
+
+  gemini: async (node, ctx) => {
+    let apiKey = node?.data?.config?.apiKey;
+    let endpoint = node?.data?.config?.apiEndpoint;
+    const model = node?.data?.config?.model;
+    const connectionId = node?.data?.config?.connectionId;
+
+    if (!apiKey && connectionId) {
+      const rows = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, connectionId))
+        .limit(1);
+
+      const row = rows[0];
+      if (!row?.access_token_enc) throw new Error("Missing Gemini API key");
+      const enc = row.access_token_enc.toString("utf8");
+      apiKey = decrypt(enc);
+      const meta = (row.metadata as any) || {};
+      endpoint = endpoint || meta.endpoint || undefined;
+    }
+
+    if (!apiKey) throw new Error("Missing Gemini API key");
+    const output = await callGemini(apiKey, endpoint, ctx.prompt || "", model);
+    return {
+      aiProvider: "gemini",
+      aiOutput: output,
+    };
+  },
+  claude: async (node, ctx) => {
+    let apiKey = node?.data?.config?.apiKey;
+    let endpoint = node?.data?.config?.apiEndpoint;
+    const model = node?.data?.config?.model;
+    const connectionId = node?.data?.config?.connectionId;
+
+    if (!apiKey && connectionId) {
+      const rows = await db
+        .select()
+        .from(connections)
+        .where(eq(connections.id, connectionId))
+        .limit(1);
+
+      const row = rows[0];
+      if (!row?.access_token_enc) throw new Error("Missing Claude API key");
+      const enc = row.access_token_enc.toString("utf8");
+      apiKey = decrypt(enc);
+      const meta = (row.metadata as any) || {};
+      endpoint = endpoint || meta.endpoint || undefined;
+    }
+
+    if (!apiKey) throw new Error("Missing Claude API key");
+    const output = await callGemini(apiKey, endpoint, ctx.prompt || "", model);
+    return {
+      aiProvider: "claude",
+      aiOutput: output,
+    };
+  },
+
+  discord: async (node, ctx) => {
+    let webhookUrl: string | null = node?.data?.config?.connectionId;
+    if (!webhookUrl) {
+      const id = node?.data?.config?.connectionId;
+      if (id) {
+        const rows = await db
+          .select()
+          .from(connections)
+          .where(eq(connections.id, id))
+          .limit(1);
+        const row = rows[0];
+        const meta = (row?.metadata as any) || null;
+        webhookUrl = meta.webhook_url || meta.wekhookUrl || null;
+      }
+    }
+
+    if (!webhookUrl) {
+      console.log("error");
+      return {
+        sinkResult: { ok: false, error: "Discord webhook URL missing." },
+      };
+    }
+
+    await sendDiscordMessage(webhookUrl, ctx.aiOutput || "(no content)");
+    return { sinkResult: { ok: true, provider: "discord" } };
+  },
+
+  "http-request": async (node, ctx) => {
+    const url = node?.data?.config?.url;
+    const method = node?.data?.config?.method || "POST";
+    const headers = node?.data?.config?.headers || {};
+    if (!url) {
+      console.log("error");
+      return { sinkResult: { ok: false, error: "HTTP Request URL missing." } };
+    }
+    const payload = { summary: ctx.aiOutput, emails: ctx.triggerData };
+    const res = sendHttpRequest(method, url, payload, headers);
+    return { sinkResult: res, sinkPayload: payload };
+  },
 };
+
+export async function executeWorkflow(
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  options: { stopIfEmptyTriggerProviders?: string[] }
+) {
+  const ordered = topologicallySorted(nodes || [], edges || []);
+  const ctx: ExecutionCtx = {};
+  const steps: Array<{
+    nodeId: string;
+    label?: string;
+    result: any;
+    status?: "ok" | "error" | "stopped";
+    error?: string;
+    reason?: string;
+    stepNumber?: number;
+  }> = [];
+  const stopProviders = (options?.stopIfEmptyTriggerProviders || []).map((p) =>
+    p.toLowerCase()
+  );
+
+  for (let i = 0; i < ordered.length; i++) {
+    const node = ordered[i];
+    const stepNumber = Number(node?.data?.stepNumber ?? i + 1);
+    const provider =
+      detectProvider(node?.data?.label, node?.data?.config?.provider) ||
+      "unknown";
+
+    try {
+      const exec = executors[provider];
+      if (exec) {
+        const delta = await exec(node, ctx);
+        Object.assign(ctx, delta);
+
+        // TODO - add logs
+      }
+    } catch (error: any) {
+      console.log("error");
+
+      const result = await executeNode(node).catch(() => null);
+      // TODO - add logs
+
+      steps.push({
+        nodeId: node.id,
+        label: node?.data?.label,
+        result,
+        status: "error",
+        error: error?.message || String(error),
+        stepNumber,
+      });
+
+      break;
+    }
+
+    if (
+      stepNumber === 1 &&
+      stopProviders.includes(provider) &&
+      Array.isArray(ctx.triggerData) &&
+      ctx.triggerData.length === 0
+    ) {
+      const result = await executeNode(node);
+      // TODO - add logs
+
+      console.log("node-response", {
+        nodeId: node.id,
+        provider,
+        stepNumber,
+        status: "stopped",
+        reason: "empty-trigger",
+        result,
+      });
+
+      steps.push({
+        nodeId: node.id,
+        label: node?.data?.label,
+        result,
+        status: "stopped",
+        reason: "empty-trigger",
+        stepNumber,
+      });
+
+      break;
+    }
+
+    const result = await executeNode(node);
+
+    console.log("node-response", {
+      nodeId: node.id,
+      provider,
+      stepNumber,
+      status: "ok",
+      result,
+    });
+
+    steps.push({
+      nodeId: node.id,
+      label: node?.data?.label,
+      result,
+      status: "ok",
+      stepNumber,
+    });
+  }
+
+  return {
+    ok: true,
+    triggerProvider: ctx.triggerProvider || null,
+    triggerCount: Array.isArray(ctx.triggerData) ? ctx.triggerData.length : 0,
+    triggerData: ctx.triggerData || [],
+    aiProvider: ctx.aiProvider || null,
+    aiOutput: ctx.aiOutput || "",
+    sinkResult: ctx.sinkResult || null,
+    steps,
+  };
+}
